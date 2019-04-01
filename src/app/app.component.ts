@@ -13,6 +13,8 @@ export class AppComponent {
   numbers$:any;
   fiveNumbers$:any;
   letters$:any;
+  x:number;
+  i:string;
 
   ngOnInit() {
     fromEvent(document, 'click').subscribe(x => console.log(x));
@@ -42,6 +44,8 @@ export class AppComponent {
   
   
   }
+
+  inputChange($event){console.log('Input changed', $event)}
 
   ngOnDestroy() {
     this.observable$.unsubsribe();
