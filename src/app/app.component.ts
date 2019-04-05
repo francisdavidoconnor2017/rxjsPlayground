@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { Observable, interval, of, fromEvent } from 'rxjs';
-import { take, map, mergeMap, switchMap, filter } from 'rxjs/operators'
+import { HttpClient } from "@angular/common/http";
+import { Observable, Subject, interval, of, fromEvent } from 'rxjs';
+import { take, map, switchMap, filter, debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 @Component({
   selector: 'app-root',
@@ -9,15 +10,16 @@ import { take, map, mergeMap, switchMap, filter } from 'rxjs/operators'
 })
 export class AppComponent {
   title = 'rxjs';
-  observable$:any;
-  numbers$:any;
-  fiveNumbers$:any;
-  letters$:any;
-  x:number;
-  i:string;
-
+  observable$: Observable<number>;
+  numbers$: Observable<number>;
+  fiveNumbers$: Observable<number>;
+  letters$: Observable<any>;
+  results$: Observable<any>;  
+  x: number;
+  i: string;
+  searchSubject$: Subject<string>;
+  constructor(private http: HttpClient) {}
   ngOnInit() {
-    fromEvent(document, 'click').subscribe(x => console.log(x));
 
     this.observable$ = Observable.create((observer) => {
       observer.next(1);
@@ -27,7 +29,7 @@ export class AppComponent {
     });
     this.observable$.subscribe(
       value => console.log(value),
-      err => {},
+      err => { },
       () => console.log('this is the end')
     )
 
@@ -36,20 +38,30 @@ export class AppComponent {
     //take - only take the first x
     //map - transform function
     //filter - only include values under function y
-    this.fiveNumbers$ = this.numbers$.pipe(take(5)).pipe(map(x => x * 10)).pipe(filter(x => x>=20));
-    this.fiveNumbers$.subscribe(x => {console.log(x)});
+    this.fiveNumbers$ = this.numbers$.pipe(take(5)).pipe(map(x => x)).pipe(filter(x => x >= 20));
+    this.fiveNumbers$.subscribe(x => { console.log(x) });
 
-    this.letters$ = of("a","b","c","d","e");
-    this.letters$.pipe(switchMap(x => this.numbers$.pipe(take(5)).pipe(map(i => i+x)))).subscribe(x => console.log(x));
-  
-  
+    this.letters$ = of("a", "b", "c", "d", "e");
+    this.letters$.pipe(switchMap(x => this.numbers$.pipe(take(5)).pipe(map(i => i + x)))).subscribe(x => console.log(x));
+
+    this.searchSubject$ = new Subject<string>();
+    this.searchSubject$.pipe(debounceTime(200)).subscribe(z => console.log("Debounced", z));
+    this.results$ = this.searchSubject$.pipe(debounceTime(200)).pipe(distinctUntilChanged()).pipe(switchMap(searchString => this.queryApi(searchString)));
   }
 
-  inputChange($event){console.log('Input changed', $event)}
+  inputChange($event) {
+    console.log('Input changed', $event);
+    this.searchSubject$.next($event)
+  }
+
+  queryApi(searchString){
+    console.log('queryAPI', searchString);
+    return this.http.get(`https://www.reddit.com/r/aww/search.json?q=${searchString}`).pipe(map(result => result['data']['children']));
+  }
 
   ngOnDestroy() {
-    this.observable$.unsubsribe();
-    this.fiveNumbers$.unsubscribe();
-    this.letters$.unsubscribe();
+    //this.observable$.unsubscribe();
+    //this.fiveNumbers$.unsubscribe();
+    //this.letters$.unsubscribe();
   }
 }

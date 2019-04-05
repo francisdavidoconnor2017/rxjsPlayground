@@ -1,3 +1,14 @@
 <button>Click me</button>
 
 <input type="text" [(ngModel)]="searchString" (ngModelChange)=inputChange($event) placeholder="Search">
+
+<button (click)="searchstring = ''">Clear</button>
+
+<div *ngFor="let result of results$ | async"> 
+    <div *ngIf="result.data.thumbnail != 'default' && result.data.thumbnail !='self'">
+        <a [href]="result.data.url">
+            <img [src]="result.data.thumbnail" alt="">
+        </a>
+    </div>
+</div>
+
